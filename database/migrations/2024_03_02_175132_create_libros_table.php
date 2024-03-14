@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('titulo');
             $table->string('autor');
-            $table->date('año_publicacion');
+            $table->integer('año_publicacion');
             $table->string('genero');
-            $table->boolean('disponible');
+            $table->boolean('disponible')->default(true);
             $table->timestamps();
         });
     }

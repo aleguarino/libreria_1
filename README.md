@@ -1,48 +1,66 @@
-# libreria_1
+# libreria_2
 
-Práctica 1 de Laravel - EIP
+Práctica 2 de Laravel - EIP
 
-## 1. Instalación de Laravel: Igual que antes, instala Laravel usando Composer.
+## Cambios en los modelos Libros y prestamos
 
-composer create-project --prefer-dist laravel/laravel libreria
+-   Libro:
 
-## 2. Configuración de la base de datos: Configura tu base de datos en el archivo. env.
+    -   El campo Año de publicación pasa de tipo date a entero ya que queremos únicamente el año.
+    -   Al campo disponible se le asigna por defecto el valor true, ya que una vez añadido un libro, éste estará disponible para su préstamo.
 
-Creación de una nueva base de datos en mi entorno local llamada "librería".
+-   Préstamo:
+    -   Nuevo campo devuelto, por defecto falso. Indica si un préstamo ha sido devuelto o no.
+    -   Añadida la clave foránea libro_id que es relacionado con la tabla Libro.
 
-Credenciales modificadas para el acceso (Valores por defecto de MAMP).
+## Rutas.
 
-## 3. Creación de la migración de libros: Crea una nueva migración para crear la tabla de libros.
+-   Libro:
 
-php artisan make:model Libro -m
+    -   Lista de libros
+    -   Creación, borrado y edición de libros
 
-Con este comando creamos el modelo y su migración
+-   Préstamos:
+    -   Lista de préstamos
+    -   Creación de préstamos
 
-## 4. Edita la migración creada para incluir los siguientes campos: id, titulo, autor, año_publicación, género, disponible.
+### Operaciones CRUD en Libro
 
-    Schema::create('libros', function (Blueprint $table) {
-        $table->id();
-        $table->string('titulo');
-        $table->string('autor');
-        $table->date('año_publicacion');
-        $table->string('genero');
-        $table->boolean('disponible');
-        $table->timestamps();
-    });
+Las operaciones CRUD del modelo libro son todas gestionadas a través de las rutas
 
-## 5. Creación de la migración de préstamos: Esta migración debe incluir los siguientes campos: id, user_id, book_id, fecha_prestamo, fecha_devolucion.
+#### Reglas para añadir un libro
 
-php artisan make:model Prestamo -m
+- Todos los campos deben de estar rellenos
+- El año debe tener un formáto númerico válido y ser menor o igual que el año actual
 
-    Schema::create('prestamos', function (Blueprint $table) {
-        $table->id();
-        $table->integer('user_id');
-        $table->integer('book_id');
-        $table->date('fecha_prestamo');
-        $table->date('fecha_devolucion');
-        $table->timestamps();
-    });
+### Operaciones CRUD en Préstamo
 
-## 6. Ejecuta las migraciones.
+En los préstamos, tanto el listado como la creación se realizan de la misma manera que con los libros.
 
-php artisan migrate
+Para gestionar que un libro no esté disponible cuando se cree un préstamo asociado, se realiza a través del observer PrestamoObserver.
+En el observer se indica que tanto al crear como al finalizar un préstamo cambie el estado de disponibildad del libro en cuestión.
+
+```
+    public function created(Prestamo $prestamo): void
+    {
+        $libro = $prestamo->libro;
+        $libro->disponible = false;
+        $libro->save();
+    }
+
+    public function updated(Prestamo $prestamo): void
+    {
+        $libro = $prestamo->libro;
+        $libro->disponible = true;
+        $libro->save();
+    }
+```
+
+Para finalizar un préstamo (actualizar su estado a devuelto), se abre una ventana modal que realiza la gestión enviando el id del préstamo a través de una ruta de tipo post.
+Lo mismo ocurre cuando se modifica un préstamo.
+
+#### Reglas para los préstamos
+
+- Todos los campos deben de estar rellenos
+- La fecha de la devolución debe de ser mayor que la fecha de inicio del préstamo
+- Los préstamos no serán borrados, serán finalizados
