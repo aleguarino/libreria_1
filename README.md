@@ -50,9 +50,11 @@ En el observer se indica que tanto al crear como al finalizar un préstamo cambi
 
     public function updated(Prestamo $prestamo): void
     {
-        $libro = $prestamo->libro;
-        $libro->disponible = true;
-        $libro->save();
+        if ($prestamo->devuelto == true) {
+            $libro = $prestamo->libro;
+            $libro->disponible = true;
+            $libro->save();
+        }
     }
 ```
 
