@@ -1,68 +1,67 @@
-# libreria_2
+# libreria_3
 
-Práctica 2 de Laravel - EIP
+Práctica 3 de Laravel - EIP
 
-## Cambios en los modelos Libros y prestamos
+## Autenticación
 
--   Libro:
+Se ha añadido una autenticación con jetstream.
 
-    -   El campo Año de publicación pasa de tipo date a entero ya que queremos únicamente el año.
-    -   Al campo disponible se le asigna por defecto el valor true, ya que una vez añadido un libro, éste estará disponible para su préstamo.
+## Cambios en el modelo
 
--   Préstamo:
-    -   Nuevo campo devuelto, por defecto falso. Indica si un préstamo ha sido devuelto o no.
-    -   Añadida la clave foránea libro_id que es relacionado con la tabla Libro.
+- El campo user_id es una clave foránea que hace referencia a la tabla users.
 
-## Rutas.
+## Restricciones de acceso
 
--   Libro:
-
-    -   Lista de libros
-    -   Creación, borrado y edición de libros
-
--   Préstamos:
-    -   Lista de préstamos
-    -   Creación de préstamos
-
-### Operaciones CRUD en Libro
-
-Las operaciones CRUD del modelo libro son todas gestionadas a través de las rutas
-
-#### Reglas para añadir un libro
-
-- Todos los campos deben de estar rellenos
-- El año debe tener un formáto númerico válido y ser menor o igual que el año actual
-
-### Operaciones CRUD en Préstamo
-
-En los préstamos, tanto el listado como la creación se realizan de la misma manera que con los libros.
-
-Para gestionar que un libro no esté disponible cuando se cree un préstamo asociado, se realiza a través del observer PrestamoObserver.
-En el observer se indica que tanto al crear como al finalizar un préstamo cambie el estado de disponibildad del libro en cuestión.
+- Admin:
+  - Solo el usuario que pertenezca al grupo de administrador podrá ver todos los prestamos. Para ello se ha creado un middleware llamado AdminMiddleware que comprueba si el usuario pertenece a ese grupo o no.
 
 ```
-    public function created(Prestamo $prestamo): void
+    class AdminMiddleware
     {
-        $libro = $prestamo->libro;
-        $libro->disponible = false;
-        $libro->save();
-    }
+        /**
+        * Handle an incoming request.
+        *
+        * @param  \Illuminate\Http\Request  $request
+        * @param  \Closure  $next
+        * @return mixed
+        */
+        public function handle($request, Closure $next)
+        {
+            if (Auth::check() && Auth::user()->currentTeam && Auth::user()->currentTeam->name !== 'administrador') {
+                abort(403, 'Unauthorized');
+            }
 
-    public function updated(Prestamo $prestamo): void
-    {
-        if ($prestamo->devuelto == true) {
-            $libro = $prestamo->libro;
-            $libro->disponible = true;
-            $libro->save();
+            return $next($request);
         }
     }
 ```
 
-Para finalizar un préstamo (actualizar su estado a devuelto), se abre una ventana modal que realiza la gestión enviando el id del préstamo a través de una ruta de tipo post.
-Lo mismo ocurre cuando se modifica un préstamo.
+- Login:
+  - Además, se ha restringido el acceso a diferentes rutas en las que debe de haber un usuario logeado para poder acceder a su información. Esto es manjeado por el middleware Auth ya definido por jetstream. Las rutas son:
+    - /prestamos/nuevo
+    - /perfil/prestamos
+    - /prestamos
 
-#### Reglas para los préstamos
+```
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/prestamos', [PrestamoController::class, 'showLendings'])->name('listLendings');
+    });
 
-- Todos los campos deben de estar rellenos
-- La fecha de la devolución debe de ser mayor que la fecha de inicio del préstamo
-- Los préstamos no serán borrados, serán finalizados
+    Route::middleware('auth')->group(function () {
+        Route::get('/prestamos/nuevo', [PrestamoController::class, 'showAddForm'])->name('showLendingForm');
+        Route::get('/perfil/prestamos', [UserController::class, 'showLendings'])->name('listMyLendings');
+    });
+```
+
+
+## Barra de navegación
+
+- Nuevos botones de autenticación (iniciar sesión, registro, cerrar sesión)
+- Nuevo botón de perfil
+- Nuevo botón 'mis préstamos' que muestra los muestros del usuario logeado
+- El enlace a préstamos solo aparecerá en caso de que haya iniciado sesión un administrador
+
+
+## Nueva vista 'mis préstamos'
+
+Esta vista muestra únicamente los préstamos que haya realizado el usuario logeado en cuestión. El controlador UserController es quien se encarga de mandar los préstamos a la vista.
