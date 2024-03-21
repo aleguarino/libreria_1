@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Libro;
 use App\Models\Prestamo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PrestamoController extends Controller
 {
@@ -37,18 +38,18 @@ class PrestamoController extends Controller
             'lendingDate' => 'required|date',
             'returnDate' => 'required|date|after:lendingDate',
         ], $messages);
-
+        $userId = Auth::user()->id;
         $libroId = $req->input('book');
         $lendingDate = $validatedData['lendingDate'];
         $returnDate = $validatedData['returnDate'];
-        $this->prestamo->add(1, $lendingDate, $returnDate, $libroId);
-        return redirect()->route('listLendings');
+        $this->prestamo->add($userId, $lendingDate, $returnDate, $libroId);
+        return redirect()->route('listMyLendings');
     }
 
     public function returnLending(Request $req)
     {
         $this->prestamo->return($req->input('id'));
-        return redirect()->route('listLendings');
+        return redirect()->route('listMyLendings');
     }
 
     public function editLending(Request $req)
@@ -65,6 +66,6 @@ class PrestamoController extends Controller
         $lendingDate = $validatedData['lendingDate'];
         $returnDate = $validatedData['returnDate'];
         $this->prestamo->updateLending($req->input('id'), $lendingDate, $returnDate);
-        return redirect()->route('listLendings');
+        return redirect()->route('listMyLendings');
     }
 }

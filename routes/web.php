@@ -1,8 +1,9 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\LibroController;
 use App\Http\Controllers\PrestamoController;
-use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,9 +35,25 @@ Route::post('/updateBookPost', [LibroController::class, 'updateBook'])->name('up
 Route::post('/deleteBookPost', [LibroController::class, 'deleteBook'])->name('deleteBook');
 
 ############# PRESTAMOS #################
-Route::get('/prestamos', [PrestamoController::class, 'showLendings'])->name('listLendings');
-Route::get('/prestamos/nuevo', [PrestamoController::class, 'showAddForm'])->name('showLendingForm');
-
 Route::post('/addLending', [PrestamoController::class, 'add'])->name('addLending');
 Route::post('/returnLending', [PrestamoController::class, 'returnLending'])->name('returnLending');
 Route::post('/editLending', [PrestamoController::class, 'editLending'])->name('editLending');
+
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/prestamos', [PrestamoController::class, 'showLendings'])->name('listLendings');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/prestamos/nuevo', [PrestamoController::class, 'showAddForm'])->name('showLendingForm');
+    Route::get('/perfil/prestamos', [UserController::class, 'showLendings'])->name('listMyLendings');
+});
+
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+});

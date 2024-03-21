@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use App\Models\Libro;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,13 +13,19 @@ class Prestamo extends Model
     use HasFactory;
 
     protected $table = 'prestamos';
-    protected $fillable = ['user_id', 'fecha_prestamo', 'fecha_devolucion', 'devuelto', 'libro_id'];
+    protected $fillable = ['fecha_prestamo', 'fecha_devolucion', 'devuelto', 'libro_id', 'user_id'];
     protected $casts = ["fecha_prestamo" => "datetime", "fecha_devolucion" => "datetime"];
 
     // Devuelve el libro que pertence al préstamo
     public function libro(): BelongsTo
     {
         return $this->belongsTo(Libro::class);
+    }
+
+    // Devuelve el usuario que hizo el préstamo
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     // Devuelve todos los préstamos
@@ -66,6 +73,7 @@ class Prestamo extends Model
         $prestamo->save();
     }
 
+    // Actualiza las fechas de un préstamo
     public function updateLending($id, $lendingDate, $returnDate)
     {
         Prestamo::find($id)->update([

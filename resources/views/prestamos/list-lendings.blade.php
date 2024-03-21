@@ -3,7 +3,13 @@
 @section('title', 'Préstamos')
 
 @section('content')
-
+    @php
+        $team = null;
+        $user = Auth::user();
+        if (isset($user)) {
+            $team = $user->currentTeam;
+        }
+    @endphp
     <div class="row justify-content-center m-5">
         <div class="col-6">
             <table class="table table-hover table-striped table-responsive">
@@ -50,6 +56,7 @@
     <div class="alert alert-danger" role="alert" id="infoError">
         This is a info alert—check it out!
     </div>
+
 @endsection
 
 @push('scripts')

@@ -19,6 +19,13 @@
 </head>
 
 <body>
+    @php
+        $team = null;
+        $user = Auth::user();
+        if (isset($user)) {
+            $team = $user->currentTeam;
+        }
+    @endphp
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
@@ -26,9 +33,38 @@
                     <li class="nav-item">
                         <a class="nav-link" href={{ route('listBooks') }}>Libros</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href={{ route('listLendings') }}>Préstamos</a>
-                    </li>
+                    @if (isset($team) && $team->name == 'administrador')
+                        <li class="nav-item">
+                            <a class="nav-link" href={{ route('listLendings') }}>Préstamos</a>
+                        </li>
+                    @endif
+                </ul>
+                <ul class="navbar-nav justify-content-end">
+                    @guest
+                        <li class="nav-item">
+                            <a class="nav-link" href={{ route('login') }}>Iniciar sesión</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href={{ route('register') }}>Registro</a>
+                        </li>
+                    @else
+                        <li class="nav-item">
+                            <a class="nav-link" href={{ route('listMyLendings') }}>Mis préstamos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href={{ route('profile.show') }}>{{ Auth::user()->name }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <a class="nav-link"
+                                    onclick="event.preventDefault(); if (!confirm('¿Está seguro de cerrar su sesión?')) return false; this.closest('form').submit()"
+                                    href={{ route('logout') }}>
+                                    Cerrar sesión
+                                </a>
+                            </form>
+                        </li>
+                    @endguest
                 </ul>
             </div>
         </nav>
